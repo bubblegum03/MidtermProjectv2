@@ -1,63 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/task_provider.dart';
 
-class ListTasksScreen extends StatefulWidget {
+class ListTasksScreen extends StatelessWidget {
   const ListTasksScreen({Key? key}) : super(key: key);
 
   @override
-  _ListTasksScreenState createState() => _ListTasksScreenState();
-}
-
-class _ListTasksScreenState extends State<ListTasksScreen> {
-  List<String> tasks = [];
-
-  // Method to navigate to AddTaskScreen and retrieve the result
-  Future<void> _navigateToAddTaskScreen() async {
-    final newTask = await Navigator.pushNamed(context, '/addTask') as String?;
-    if (newTask != null && newTask.isNotEmpty) {
-      setState(() {
-        tasks.add(newTask);
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Access TaskProvider
+    final taskProvider = Provider.of<TaskProvider>(context);
+
     return Scaffold(
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              '𓍯𓂃List of Tasks Here ִֶָ☾.',
-              style: TextStyle(fontSize: 24),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: tasks.length,
+      appBar: AppBar(
+        title: const Text('Your Tasks'),
+      ),
+      body: taskProvider.tasks.isEmpty
+          ? const Center(
+              child: Text('No tasks available. Add some!'),
+            )
+          : ListView.builder(
+              itemCount: taskProvider.tasks.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(tasks[index]),
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/taskCompleted',
-                      arguments: tasks[index],
-                    );
-                  },
+                final task = taskProvider.tasks[index];
+
+                return Card(
+                  child: ListTile(
+                    title: Text(task.name),
+                    subtitle: Text('Category: ${task.category}'),
+                    trailing: Text(task.dueDate),
+                  ),
                 );
               },
             ),
-          ),
-        //   Padding(
-        //     padding: const EdgeInsets.all(16.0),
-        //     child: ElevatedButton(
-        //       onPressed: _navigateToAddTaskScreen,
-        //       child: const Text('Add New Task'),
-        //     ),
-        //   ),
-        ],
-     ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/addTask'); // Adjust as needed
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

@@ -1,57 +1,70 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/task_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/add_task_screen.dart';
 import 'screens/list_tasks_screen.dart';
-import 'screens/task_completed_screen.dart';
-import 'screens/about_screen.dart'; // Import the About screen
+import 'screens/about_screen.dart';
+import 'screens/task_details_screen.dart';
 
-void main() => runApp(const BottomNavigationBarExampleApp());
-
-class BottomNavigationBarExampleApp extends StatefulWidget {
-  const BottomNavigationBarExampleApp({super.key});
-
-  @override
-  _BottomNavigationBarExampleAppState createState() =>
-      _BottomNavigationBarExampleAppState();
+void main() {
+  runApp(const TaskEaseApp());
 }
 
-class _BottomNavigationBarExampleAppState
-    extends State<BottomNavigationBarExampleApp> {
-  bool _isLightTheme = true;
-
-  void _switchTheme(bool isLight) {
-    setState(() {
-      _isLightTheme = isLight;
-    });
-  }
+class TaskEaseApp extends StatelessWidget {
+  const TaskEaseApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: _isLightTheme ? ThemeData.light() : ThemeData.dark(),
-      home: BottomNavigationBarExample(
-        switchTheme: _switchTheme,
-        isLightTheme: _isLightTheme,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              primaryColor: Colors.pink,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.pink,
+                iconTheme: IconThemeData(color: Colors.green),
+              ),
+              textTheme: const TextTheme(
+                bodyLarge: TextStyle(color: Colors.black), // Updated
+                bodyMedium: TextStyle(color: Colors.black54), // Updated
+              ),
+              scaffoldBackgroundColor: Colors.white,
+            ),
+            darkTheme: ThemeData(
+              primaryColor: Colors.black,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.black,
+                iconTheme: IconThemeData(color: Colors.white),
+              ),
+              textTheme: const TextTheme(
+                bodyLarge: TextStyle(color: Colors.white), // Updated
+                bodyMedium: TextStyle(color: Colors.grey), // Updated
+              ),
+              scaffoldBackgroundColor: const Color(0xFF121212),
+            ),
+            themeMode:
+                themeProvider.isLightTheme ? ThemeMode.light : ThemeMode.dark,
+            home: const BottomNavigationBarExample(),
+            routes: {
+              '/taskDetails': (context) => TaskDetailsScreen(),
+              '/about': (context) => AboutScreen(),
+            },
+          );
+        },
       ),
-      routes: {
-        '/addTask': (context) => AddTaskScreen(),
-        '/taskCompleted': (context) => const TaskCompletedScreen(),
-        '/about': (context) => AboutScreen(), // Add route for About screen
-      },
     );
   }
 }
 
 class BottomNavigationBarExample extends StatefulWidget {
-  final Function(bool) switchTheme;
-  final bool isLightTheme;
-
-  const BottomNavigationBarExample({
-    super.key,
-    required this.switchTheme,
-    required this.isLightTheme,
-  });
+  const BottomNavigationBarExample({Key? key}) : super(key: key);
 
   @override
   State<BottomNavigationBarExample> createState() =>
@@ -63,41 +76,38 @@ class _BottomNavigationBarExampleState
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
-    const ListTasksScreen(),
-     AddTaskScreen(), // Assuming you have this screen defined
-     const TaskCompletedScreen(), // Assuming you have this screen defined
-     AboutScreen(), // Add AboutScreen to options
+    ListTasksScreen(),
+    AddTaskScreen(),
+    ListTasksScreen(), // Placeholder for completed tasks, customize if needed
   ];
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index; // Update selected index
-
-      if (_selectedIndex == 0) {
-        // Show ListTasksScreen
-      } else if (_selectedIndex == 1) {
-        Navigator.pushNamed(context, '/addTask');
-      } else if (_selectedIndex == 2) {
-        Navigator.pushNamed(context, '/taskCompleted', arguments: "Sample Task");
-      } else if (_selectedIndex == 3) { // Handle About screen tap
-        Navigator.pushNamed(context, '/about');
-      }
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 233, 113, 153),
+        backgroundColor: themeProvider.isLightTheme
+            ? const Color.fromARGB(255, 233, 113, 153)
+            : const Color.fromARGB(255, 40, 40, 40),
         title: const Text(
-          '༘⋆🌷Task Manager💭₊˚ෆ',
+          '༘⋆🌷TaskEase💭₊˚ෆ',
           style: TextStyle(color: Color.fromARGB(255, 5, 119, 9)),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info),
+            onPressed: () => Navigator.pushNamed(context, '/about'),
+          ),
           Switch(
-            value: widget.isLightTheme,
-            onChanged: widget.switchTheme,
+            value: themeProvider.isLightTheme,
+            onChanged: (value) => themeProvider.toggleTheme(),
             activeColor: const Color.fromRGBO(233, 30, 99, 1),
             inactiveThumbColor: const Color.fromARGB(255, 38, 116, 38),
           ),
@@ -105,36 +115,38 @@ class _BottomNavigationBarExampleState
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 9, 97, 21)),
       ),
       body: Container(
-        color: widget.isLightTheme
+        color: themeProvider.isLightTheme
             ? const Color.fromARGB(255, 85, 160, 91)
-            : const Color.fromARGB(255, 228, 112, 112),
+            : const Color.fromARGB(255, 40, 40, 40),
         child: Center(
-          child: _widgetOptions[_selectedIndex],
+          child: (_widgetOptions[_selectedIndex] != null)
+              ? _widgetOptions[_selectedIndex]
+              : const Text('Error: Screen not available'),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color.fromARGB(255, 226, 105, 145),
+        backgroundColor: themeProvider.isLightTheme
+            ? const Color.fromARGB(255, 233, 165, 188)
+            : const Color.fromARGB(255, 50, 50, 50),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Tasks',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_task),
-            label: 'Add Tasks',
+            label: 'Add Task',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.check),
-            label: 'Completed Tasks',
-          ),
-          BottomNavigationBarItem( // New item for About screen
-            icon: Icon(Icons.info),
-            label: 'About',
+            label: 'Completed',
           ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFFDD7D9A),
-        unselectedItemColor: const Color.fromARGB(255, 5, 119, 9),
+        unselectedItemColor: themeProvider.isLightTheme
+            ? const Color.fromARGB(255, 5, 119, 9)
+            : const Color.fromARGB(255, 150, 150, 150),
         onTap: _onItemTapped,
       ),
     );
